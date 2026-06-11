@@ -11,8 +11,8 @@
     "build": "bun build --compile src/cli.ts --outfile clip-maker"
   },
   "dependencies": {
-    "@twurple/api": "^7.2.0",
-    "@twurple/auth": "^7.2.0"
+    "@twurple/api": "8.1.4",
+    "@twurple/auth": "8.1.4"
   },
   "devDependencies": {
     "bun-types": "^1.3.14"
