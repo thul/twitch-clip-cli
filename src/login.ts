@@ -4,11 +4,17 @@ import type { AuthConfig, StoredToken } from "./auth";
 const SCOPES = ["clips:edit"];
 
 export async function login(cfg: AuthConfig): Promise<StoredToken> {
+  // CSRF protection: an unguessable state tied to this login attempt. Twitch
+  // echoes it back on the callback; we reject any callback whose state does not
+  // match, so a forged request cannot inject an attacker's authorization code.
+  const state = crypto.randomUUID();
+
   const authUrl =
     `https://id.twitch.tv/oauth2/authorize?response_type=code` +
     `&client_id=${encodeURIComponent(cfg.clientId)}` +
     `&redirect_uri=${encodeURIComponent(cfg.redirectUri)}` +
-    `&scope=${encodeURIComponent(SCOPES.join(" "))}`;
+    `&scope=${encodeURIComponent(SCOPES.join(" "))}` +
+    `&state=${encodeURIComponent(state)}`;
 
   const port = new URL(cfg.redirectUri).port || "3000";
 
@@ -18,12 +24,13 @@ export async function login(cfg: AuthConfig): Promise<StoredToken> {
       fetch(req) {
         const url = new URL(req.url);
         const c = url.searchParams.get("code");
-        if (c) {
+        const returnedState = url.searchParams.get("state");
+        if (c && returnedState === state) {
           resolve(c);
           server.stop();
           return new Response("Authorized. You can close this tab.");
         }
-        reject(new Error("No code in callback"));
+        reject(new Error(c ? "State mismatch in callback" : "No code in callback"));
         server.stop();
         return new Response("Authorization failed.", { status: 400 });
       },

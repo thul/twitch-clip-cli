@@ -1,11 +1,8 @@
-import { runCommand } from "./run";
-
 export type WhichFn = (bin: string) => Promise<boolean>;
 
-const defaultWhich: WhichFn = async (bin) => {
-  const res = await runCommand("sh", ["-c", `command -v ${bin}`]);
-  return res.code === 0;
-};
+// Bun.which resolves a binary on PATH without spawning a shell, so the binary
+// name is never interpolated into a shell command.
+const defaultWhich: WhichFn = async (bin) => Bun.which(bin) !== null;
 
 export async function checkBinaries(
   bins: string[],
