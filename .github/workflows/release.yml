@@ -1,0 +1,53 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: bun test
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: bun-linux-x64
+            asset: clip-maker-linux-x64
+          - target: bun-linux-arm64
+            asset: clip-maker-linux-arm64
+          - target: bun-darwin-x64
+            asset: clip-maker-macos-x64
+          - target: bun-darwin-arm64
+            asset: clip-maker-macos-arm64
+          - target: bun-windows-x64
+            asset: clip-maker-windows-x64.exe
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - name: Compile ${{ matrix.target }}
+        run: |
+          bun build --compile --target=${{ matrix.target }} \
+            src/cli.ts --outfile dist/${{ matrix.asset }}
+      - name: Upload to release
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+        with:
+          files: dist/${{ matrix.asset }}
+          fail_on_unmatched_files: true

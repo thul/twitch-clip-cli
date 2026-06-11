@@ -1,0 +1,13 @@
+version: 2
+updates:
+  # Bump the SHA-pinned GitHub Actions in our workflows.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+
+  # Bump npm dependencies (@twurple/*) in package.json.
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
